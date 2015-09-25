@@ -1,0 +1,138 @@
+<%= form_for [refinery, :pods_admin, @pod] do |f| -%>
+  <%= render '/refinery/admin/error_messages',
+              :object => @pod,
+              :include_object_name => true %>
+
+
+  <div class='field'>
+    <%= f.label :pod_type -%>
+    <%= f.select :pod_type, Refinery::Pods::Pod.included_pod_types(::Refinery::Pods::Pod::POD_TYPES), {:include_blank => true}, :class => 'larger widest' %>
+  </div>
+
+  <div class='field'>
+    <%= f.label :title -%>
+    <%= f.text_field :title, :class => 'larger widest' -%>
+  </div>
+
+  <div class='field toggable bodyField'>
+    <%= render '/refinery/admin/wysiwyg',
+                :f => f,
+                :fields => [:body],
+                :object => "pods/pod" -%>
+  </div>
+
+  <div class='field toggable urlField'>
+    <%= f.label :url -%>
+    <%= f.text_field :url -%>
+  </div>
+
+    <div class='field toggable imageField'>
+      <%= f.label :image -%>
+      <%= render '/refinery/admin/image_picker',
+                 :f => f,
+                 :field => :image_id,
+                 :image => @pod.image,
+                 :toggle_image_display => false %>
+
+    </div>
+
+
+  <% if defined?(::Refinery::Portfolio::Gallery) %>
+    <div class='field toggable galleryField'>
+      <%= f.label :gallery_id, 'Gallery' -%>
+      <%= f.collection_select :gallery_id, ::Refinery::Portfolio::Gallery.order(:title), :id , :title, {:prompt => "-- Please select when relevant --"}, {} -%>
+    </div>
+  <% end %>
+
+
+  <% if defined?(::Refinery::Videos::Video) %>
+    <div class='field toggable videoField'>
+      <%= f.label :video_id -%>
+      <%= f.collection_select :video_id, ::Refinery::Videos::Video.order(:title), :id , :name, {:prompt => "-- Please select when relevant --"}, {} -%>
+    </div>
+  <% end %>
+
+
+    <div class='field'>
+      <%= f.label :start_date -%>
+      <%= f.date_select :start_date  -%>
+
+    </div>
+
+    <div class='field'>
+      <%= f.label :expiry_date -%>
+      <%= f.date_select :expiry_date  -%>
+
+    </div>
+
+    <!--TODO refactor code-->
+    <% Refinery::Pods::Pod.reflect_on_all_associations(:has_many).map{|a| a if a.options[:source_type].present? }.uniq.compact.each do |ar| %>
+        <div class="field">
+          <%= f.label ar.name %>
+          <% class_eval("#{ar.options[:source_type]}").all.each do |item| %>
+              <div>
+                <%= check_box_tag "pod[#{ar.plural_name.singularize}_ids][]", item.id, eval("@pod.#{ar.plural_name}.include?(item)") %>
+                <% if item.try(:title) %>
+                    <%= item.try(:title) %>
+                <% elsif item.try(:name) %>
+                    <%= item.try(:name) %>
+                <% end %>
+              </div>
+          <% end %>
+        </div>
+    <% end %>
+
+  <%= render '/refinery/admin/form_actions', :f => f,
+             :continue_editing => false,
+             :delete_title => t('delete', :scope => 'refinery.pods.admin.pods.pod'),
+             :delete_confirmation => t('message', :scope => 'refinery.admin.delete', :title => @pod.title) -%>
+<% end -%>
+
+<% content_for :javascripts do -%>
+  <script>
+    $(document).ready(function(){
+      page_options.init(false, '', '');
+      podType = $( "#pod_pod_type" );
+      toggle_fields(podType.val());
+
+        podType.change(function() {
+            toggle_fields($(this).val());
+        });
+
+    });
+
+
+
+    function toggle_fields(podType){
+        hide_all_fields();
+        bodyField = $('.bodyField');
+        urlField = $('.urlField');
+        imageField = $('.imageField');
+        galleryField = $('.galleryField');
+        videoField = $('.videoField');
+        switch(podType){
+            case 'content':
+                bodyField.show();
+                urlField.show();
+            break;
+            case 'banner':
+                imageField.show();
+                urlField.show();
+            break;
+            case 'gallery':
+                galleryField.show();
+            break;
+            case 'video':
+                videoField.show();
+            break;
+        }
+    }
+
+  function hide_all_fields(){
+      $('.toggable').hide();
+  }
+
+
+
+  </script>
+<% end -%>

@@ -1,0 +1,16 @@
+<li class='clearfix record <%= cycle("on", "on-hover") %>' id="<%= dom_id(pod) -%>">
+  <span class='title'>
+    <%= "#{pod.title} ::#{pod.pod_type}::"  %>
+
+  </span>
+  <span class='actions'>
+    
+    <%= link_to refinery_icon_tag("application_edit.png"), refinery.edit_pods_admin_pod_path(pod),
+         :title => t('.edit') %>
+    <%= link_to refinery_icon_tag("delete.png"), refinery.pods_admin_pod_path(pod),
+        :class => "cancel confirm-delete",
+        :title => t('.delete'),
+        :confirm => t('message', :scope => 'refinery.admin.delete', :title => pod.title),
+        :method => :delete %>
+  </span>
+</li>
